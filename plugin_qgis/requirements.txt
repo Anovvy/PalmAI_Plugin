@@ -1,0 +1,14 @@
+# The main library for AI and image processing
+
+# Note: torch, torchvision and torchaudio MUST be installed manually in accordance with the respective CUDA versions of your GPUs.
+
+numpy<2.0.0
+sahi==0.11.15
+ultralytics>=8.0.0
+scikit-image<0.23.0
+scipy<1.14.0
+opencv-python<4.10.0
+rasterio<1.4.0
+tifffile<2024.0.0
+fiona
+shapely
