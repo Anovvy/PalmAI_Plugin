@@ -74,20 +74,20 @@ Because the Hybrid Pipeline relies on 10 different parameters, i built a Grid Se
 Below is the index of the core R&D scripts preserved in this directory:
 
 ### **YOLOv8 Pipeline (Trees)**
-- [`slicing_to_png_randomize.py`](\slicing_to_png_randomize.py) - Standard tile generation.
-- [`spesific_slicing_to_png.py` ](\spesific_slicing_to_png.py)- Targeted slicing for class balancing.
-- [`trainingyolov8.py`](\trainingyolov8.py) - Model training with HSV augmentation.
+- `slicing_to_png_randomize.py` - Standard tile generation.
+- `spesific_slicing_to_png.py` )- Targeted slicing for class balancing.
+- `trainingyolov8.py` - Model training with HSV augmentation.
 
 ### **Road Segmentation Pipeline (Roads)**
 ### Training Scripts:
-- [`u_net_scratch_training.py`](\u_net_scratch_training.py)
-- [`u_net_pretrained_training.py`](\u_net_pretrained_training.py)
-- [`deeplabv3+_training.py`](\deeplabv3+_training.py)
-- [`segformer_training.py`](\segformer_training.py)
+- `u_net_scratch_training.py`
+- `u_net_pretrained_training.py`
+- `deeplabv3+_training.py`
+- `segformer_training.py`
 ### Inference & Hybrid Post-Processing Scripts:
-- [`u_net_scratch_detection_hybrid_postprosessing.py`](\u_net_scratch_detection_hybrid_postprosessing.py)
-- [`u_net_pretrained_detection_hybrid_postprocessing.py`](\u_net_pretrained_detection_hybrid_postprocessing.py)
-- [`deeplabv3+_detection_hybrid_postprosessing.py`](\deeplabv3+_detection_hybrid_postprosessing.py)
-- [`segformer_detection_hybrid_postprosessing.py`](\segformer_detection_hybrid_postprosessing.py)
+- `u_net_scratch_detection_hybrid_postprosessing.py`
+- `u_net_pretrained_detection_hybrid_postprocessing.py`
+- `deeplabv3+_detection_hybrid_postprosessing.py`
+- `segformer_detection_hybrid_postprosessing.py`
 ### Inference & Hybrid Post-Processing Scripts:
-- [`post_processing_parameter_tuning_(gridsearch).py` ](\post_processing_parameter_tuning_(gridsearch).py) - The automated script used to generate the parameter table above.
+- `post_processing_parameter_tuning_(gridsearch).py` - The automated script used to generate the parameter table above.
