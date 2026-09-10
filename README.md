@@ -29,7 +29,7 @@ Segmentation and extraction of plantation road networks into Shapefile line vect
 https://github.com/user-attachments/assets/643d65d7-d6e7-4b14-a943-de487a838b0d
 
 ## **User Guide**
-I have provided a step-by-step guide (from data preparation to the execution of each algorithm) [Read the PalmAI User Guide here (Coming Soon)]().
+I have provided a step-by-step guide (from data preparation to the execution of each algorithm) [Read the PalmAI User Guide here (Coming Soon)](https://drive.google.com/file/d/1pgkmoNwnQgRRP3JbT9n_loTzG5tLFDIz/view?usp=sharing).
 
 ## **Repository Structure**
 ```text
