@@ -15,6 +15,7 @@ import gc
 from qgis.PyQt import uic
 from qgis.PyQt.QtWidgets import QDialog, QTextBrowser, QWidget, QHBoxLayout, QLineEdit
 from qgis.PyQt.QtCore import QEvent
+from qgis.gui import QgsFileWidget
 from qgis.core import (
     QgsApplication,
     QgsTask,
