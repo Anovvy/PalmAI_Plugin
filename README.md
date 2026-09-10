@@ -8,22 +8,22 @@ PalmAI was developed to automate the data processing workflow for oil palm plant
 ### 1. Tree Counting (YOLOv8)
 Automatic detection and counting of oil palm trees with Shapefile output (Point & Bounding Box).
 
-![Demo](docs\Tree_Counting_GIF.gif)
+![Demo](docs\Tree_Counting_GIF.gif?raw=true)
 
 ### 2. Center Tree (YOLOv8)
 High-precision extraction of the centre point of oil palm crowns for use as a guide in precision positioning (e.g. spraying for Oryctes pests).
 
-![Demo](docs\Center_Tree_GIF.gif)
+![Demo](docs\Center_Tree_GIF.gif?raw=true)
 
 ### 3. Tree Classification (YOLOv8)
 Classification of the main conditions affecting oil palm trees into three categories (Healthy, Yellowish, Dead) for the analysis of plantation health.
 
-![Demo](docs\Tree_Classification_GIF.gif)
+![Demo](docs\Tree_Classification_GIF.gif?raw=true)
 
 ### 4. Road Detection (DeepLabV3+)
 Segmentation and extraction of plantation road networks into Shapefile line vectors (polylines) using hybrid pathfinding technology.
 
-![Demo](docs\Road_Detection_GIF.gif)
+![Demo](docs\Road_Detection_GIF.gif?raw=true)
 
 ## **User Guide**
 I have provided a step-by-step guide (from data preparation to the execution of each algorithm) [Read the PalmAI User Guide here (Coming Soon)](https://duckduckgo.com).
