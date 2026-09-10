@@ -50,7 +50,7 @@ PalmAI QGIS Plugin/
 └── README.md
 ```
 ## **Tech Stack**
-- **Deep Learning:** PyTorch, YOLOv8, DeepLabV3+, Logika Slicing Iteratif
+- **Deep Learning:** PyTorch, YOLOv8, DeepLabV3+, Slicing Iterative Logic
 - **Geospatial Processing:** QGIS Python API (PyQGIS), GeoPandas, Rasterio, Shapely, Fiona
 - **UI/UX:** PyQt5
 
