@@ -1,3 +1,6 @@
+
+
+
 # **PalmAI QGIS Plugin**
 ## A Deep Learning-powered QGIS plugin for the automated extraction of oil palm plantation features from drone imagery.
 
@@ -8,22 +11,22 @@ PalmAI was developed to automate the data processing workflow for oil palm plant
 ### 1. Tree Counting (YOLOv8)
 Automatic detection and counting of oil palm trees with Shapefile output (Point & Bounding Box).
 
-<img width="400" height="225" alt="Tree_Counting_GIF" src="https://github.com/user-attachments/assets/121cad61-db42-4e89-827c-87e9f7326983" />
+https://github.com/user-attachments/assets/98feab8e-b895-4ee3-b47f-22ab097fc2bc
 
 ### 2. Center Tree (YOLOv8)
 High-precision extraction of the centre point of oil palm crowns for use as a guide in precision positioning (e.g. spraying for Oryctes pests).
 
-<img width="400" height="225" alt="Center_Tree_GIF" src="https://github.com/user-attachments/assets/2509230a-41d1-440c-b68b-d9faec51792d" />
+https://github.com/user-attachments/assets/34584588-0f9d-404b-8fed-267057f0ef7f
 
 ### 3. Tree Classification (YOLOv8)
 Classification of the main conditions affecting oil palm trees into three categories (Healthy, Yellowish, Dead) for the analysis of plantation health.
 
-<img width="400" height="225" alt="Tree_Classification_GIF" src="https://github.com/user-attachments/assets/afa3bc41-80ee-428a-8336-f69da92eb32a" />
+https://github.com/user-attachments/assets/1938980e-e6e4-4759-9d31-44d6a70f6ded
 
 ### 4. Road Detection (DeepLabV3+)
 Segmentation and extraction of plantation road networks into Shapefile line vectors (polylines) using hybrid pathfinding technology.
 
-<img width="400" height="225" alt="Road_Detection_GIF" src="https://github.com/user-attachments/assets/91a8d1fc-d56f-4a4e-bd5e-7d1076199145" />
+https://github.com/user-attachments/assets/643d65d7-d6e7-4b14-a943-de487a838b0d
 
 ## **User Guide**
 I have provided a step-by-step guide (from data preparation to the execution of each algorithm) [Read the PalmAI User Guide here (Coming Soon)]().
