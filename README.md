@@ -54,7 +54,27 @@ PalmAI QGIS Plugin/
 - **Geospatial Processing:** QGIS Python API (PyQGIS), GeoPandas, Rasterio, Shapely, Fiona
 - **UI/UX:** PyQt5
 
-## **Installation Guide (GPU/MPS Configuration)**
+## **Installation (Recommended: Docker or Virtualenv)**
+The AI models no longer have to run inside QGIS' own Python, so there is no more dependency hell. The plugin is only a thin UI; inference runs in an isolated, version-pinned environment.
+
+1. Copy the `plugin_qgis` folder into your QGIS plugins directory (rename it to `PalmAI`, see Step 1 below) and enable it in QGIS.
+2. Choose **one** backend, then open **Plugins > PalmAI > Settings (Inference Backend)**:
+
+| Backend | What you need | Notes |
+|---|---|---|
+| **Docker** (recommended) | [Docker Desktop](https://www.docker.com/products/docker-desktop/) running | Image is pulled automatically on first run. NVIDIA GPU on Windows needs WSL2 + NVIDIA driver. On macOS Docker runs on CPU only. |
+| **Virtualenv** | Python 3.9-3.12 installed | Click *Set up Python environment* once. Supports CUDA and Apple MPS (use this on a Mac for GPU). |
+| **QGIS Python (legacy)** | Manual `pip install` | See the legacy guide below. |
+
+The default *Automatic* mode picks Docker, then Virtualenv, then QGIS Python. Model weights that are missing locally are downloaded from the GitHub Release `models-v1`.
+
+Building the images yourself (from `plugin_qgis/`):
+```text
+docker build -f docker/Dockerfile.cpu -t ghcr.io/anovvy/palmai-core:cpu .
+docker build -f docker/Dockerfile.gpu -t ghcr.io/anovvy/palmai-core:gpu .
+```
+
+## **Legacy Installation Guide (QGIS Python, GPU/MPS Configuration)**
 As this plugin runs a deep learning model, it is strongly recommended that you use a device with an NVIDIA GPU (CUDA-enabled). Installation must be carried out via the OSGeo4W Shell built into QGIS.
 
 ### Step 1: Install the plugin in QGIS

@@ -1,0 +1,9 @@
+models
+ui
+icons
+scripts
+backends
+*.py
+!palmai_core/**
+__pycache__
+**/__pycache__

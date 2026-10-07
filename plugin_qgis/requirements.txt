@@ -12,3 +12,4 @@ rasterio<1.4.0
 tifffile<2024.0.0
 fiona
 shapely
+geopandas
