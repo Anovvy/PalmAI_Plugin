@@ -1,0 +1,23 @@
+# PalmAI inference image - NVIDIA GPU (CUDA 12.1 wheels bundle the CUDA runtime;
+# the host only needs an NVIDIA driver + NVIDIA Container Toolkit / Docker Desktop WSL2 GPU support)
+# Build (from the plugin_qgis directory):
+#   docker build -f docker/Dockerfile.gpu -t ghcr.io/anovvy/palmai-core:gpu .
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    NVIDIA_VISIBLE_DEVICES=all NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu121
+
+COPY docker/requirements.lock /tmp/requirements.lock
+RUN pip install -r /tmp/requirements.lock
+
+WORKDIR /app
+COPY palmai_core /app/palmai_core
+
+ENTRYPOINT []
+CMD ["python", "-m", "palmai_core.worker", "--check"]

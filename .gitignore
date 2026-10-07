@@ -2,6 +2,7 @@
 *.i
 *.ii
 *.gpu
+!**/Dockerfile.gpu
 *.ptx
 *.cubin
 *.fatbin
@@ -209,6 +210,7 @@ ui_*.h
 *.jsc
 Makefile*
 *build-*
+!.github/**
 *.qm
 *.prl
 
