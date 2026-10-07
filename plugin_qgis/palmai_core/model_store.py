@@ -5,7 +5,7 @@ import os
 import urllib.request
 
 # Upload the files from plugin_qgis/models/ to this GitHub Release (tag: models-v1).
-MODEL_BASE_URL = "https://github.com/Anovvy/PalmAI_Plugin/releases/download/models-v1/"
+MODEL_BASE_URL = "https://github.com/Anovvy/PalmAI_Plugin/releases/tag/models-v1"
 
 
 def ensure_model(filename, models_dir, ctx=None):
