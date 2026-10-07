@@ -81,7 +81,7 @@ cd ~/Library/Application\ Support/QGIS/QGIS3/profiles/default/python/plugins/Pal
 ```
 ### Step 3: Installing Basic Dependencies
 Once the terminal is open in the `PalmAI` folder, run the following command:
-- **Windows:** `pip install -r requrements.txt`
+- **Windows:** `pip install -r requirements.txt`
 - **MacOS:** `pip3 install -r requirements.txt`*(Note: If an error occurs, use `/Applications/QGIS.app/Contents/MacOS/bin/python3 -m pip install -r requirements.txt`)*
 ### Step 4: PyTorch Instalation
 **For Windows users (NVIDIA CUDA):**
