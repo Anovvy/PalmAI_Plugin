@@ -11,5 +11,5 @@ rasterio==1.3.10
 fiona==1.9.6
 shapely==2.0.6
 geopandas==0.14.4
-sahi==0.11.15
+sahi==0.11.20
 ultralytics>=8.3.0,<8.4.0
