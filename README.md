@@ -53,11 +53,11 @@ https://github.com/user-attachments/assets/643d65d7-d6e7-4b14-a943-de487a838b0d
 ### **Step 1: Install the Plugin in QGIS**
 1. Clone or download this repository to your computer.
 2. Copy the `plugin_qgis` folder into your QGIS plugins directory and rename it to `PalmAI`:
-   - **Windows (Recommended - User Profile, no admin rights required):**
+   - **Windows:**
      ```text
-     %APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\PalmAI
+     C:\Program Files\QGIS 3.38.3\apps\qgis\python\plugins\PalmAI
      ```
-     *(Tip: Press `Win + R`, paste the path above without `\PalmAI`, hit Enter, and paste the folder there).*
+     *(Requires administrator privileges. If your QGIS version differs from 3.38.3, adjust the folder path accordingly).*
    - **macOS:**
      ```text
      ~/Library/Application Support/QGIS/QGIS3/profiles/default/python/plugins/PalmAI
