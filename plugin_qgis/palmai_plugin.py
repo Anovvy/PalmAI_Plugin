@@ -57,6 +57,7 @@ class PalmAIPlugin:
         self.classification_dlg = None
         self.centertree_dlg = None
         self.road_detection_dlg = None
+        self.settings_dlg = None
 
     def tr(self, message):
         """Get the translation for a string using Qt translation API."""
@@ -119,6 +120,13 @@ class PalmAIPlugin:
         self.actions.append(road_action)
         self.plugin_menu.addAction(road_action)
 
+        # --- Action for "Settings" (inference backend: Docker / Virtualenv / QGIS Python) ---
+        self.plugin_menu.addSeparator()
+        settings_action = QAction(self.tr("Settings (Inference Backend)"), self.iface.mainWindow())
+        settings_action.triggered.connect(self.run_settings)
+        self.actions.append(settings_action)
+        self.plugin_menu.addAction(settings_action)
+
     def unload(self):
         """Removes the plugin menu from the QGIS GUI."""
         self.iface.pluginMenu().removeAction(self.plugin_menu.menuAction())
@@ -151,3 +159,11 @@ class PalmAIPlugin:
             self.road_detection_dlg = RoadDetectionDialog(self.iface, self.iface.mainWindow())
         self.road_detection_dlg.show()
         self.road_detection_dlg.activateWindow()
+
+    def run_settings(self):
+        from .backends.settings_dialog import SettingsDialog
+        if self.settings_dlg is None:
+            self.settings_dlg = SettingsDialog(self.iface, self.iface.mainWindow())
+        self.settings_dlg.check_status()
+        self.settings_dlg.show()
+        self.settings_dlg.activateWindow()
