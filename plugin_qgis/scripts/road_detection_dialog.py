@@ -211,7 +211,9 @@ class RoadDetectionDialog(QDialog, FORM_CLASS):
             'pathfinding_max_avg_cost': float(self.le_pathfinding_max_avg_cost.text()), 'pathfinding_bbox_padding': int(self.le_pathfinding_bbox_padding.text())
         }
 
-        if not params['raster_path'] or not params['temp_dir']: return self.iface.messageBar().pushMessage("Error", "Lengkapi Input!", level=Qgis.Critical)
+        if not params['raster_path'] or not params['temp_dir']:
+            return self.iface.messageBar().pushMessage(
+                "Error", "Please fill in all required inputs (Raster and Temp Directory)!", level=Qgis.Critical)
         self.task = PalmAITask("Road Detection", 'road', params, PLUGIN_NAME, self._on_done,
                                models=[('model_path', MODEL_FILENAME)])
         QgsApplication.taskManager().addTask(self.task)
@@ -221,5 +223,6 @@ class RoadDetectionDialog(QDialog, FORM_CLASS):
         if result is None:
             report_failure(self.iface, error, canceled)
             return
-        self.iface.messageBar().pushMessage("Sukses", "Road Detection Selesai!", level=Qgis.Success, duration=10)
+        self.iface.messageBar().pushMessage(
+            "Success", "Road detection completed successfully!", level=Qgis.Success, duration=10)
         load_road_layers(self.iface, result.get('layers', []))

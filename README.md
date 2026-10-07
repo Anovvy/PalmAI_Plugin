@@ -1,180 +1,165 @@
-
-
-
 # **PalmAI QGIS Plugin**
-## A Deep Learning-powered QGIS plugin for the automated extraction of oil palm plantation features from drone imagery.
+## A Deep Learning-powered QGIS plugin for automated feature extraction from oil palm plantation drone imagery.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/Inference-Docker%20Container-blue.svg)](https://www.docker.com/)
+[![Python](https://img.shields.io/badge/Python-3.11-green.svg)](https://www.python.org/)
+
+---
 
 ## **Description**
-PalmAI was developed to automate the data processing workflow for oil palm plantations, which was previously carried out manually. By utilising the YOLOv8 and DeepLabV3+ architectures, this plugin drastically speeds up the digitisation process whilst maintaining spatial accuracy for operational purposes
+PalmAI automates the spatial analysis and data processing workflow for oil palm plantations, replacing manual digitization with state-of-the-art Deep Learning models. By combining **YOLOv8** object detection and **DeepLabV3+** semantic segmentation with specialized geospatial post-processing, PalmAI delivers rapid, reliable, and operationally accurate vector outputs directly into QGIS.
 
-## **Main Feature**
+To eliminate dependency conflicts ("dependency hell") across different operating systems and QGIS environments, PalmAI uses a **decoupled architecture**:
+- **QGIS Plugin (Thin Client):** Manages user inputs, parameters, and renders vector/raster layers seamlessly in QGIS.
+- **Inference Engine (Isolated Docker Container):** Runs PyTorch, CUDA, SAHI, and geospatial processing libraries in a dedicated, version-pinned environment.
+
+---
+
+## **Main Features**
+
 ### 1. Tree Counting (YOLOv8)
-Automatic detection and counting of oil palm trees with Shapefile output (Point & Bounding Box).
+Automated detection and enumeration of oil palm trees with Shapefile outputs (Bounding Boxes & Centroid Points).
 
 https://github.com/user-attachments/assets/98feab8e-b895-4ee3-b47f-22ab097fc2bc
 
 ### 2. Center Tree (YOLOv8)
-High-precision extraction of the centre point of oil palm crowns for use as a guide in precision positioning (e.g. spraying for Oryctes pests).
+High-precision crown centroid extraction for precision agriculture navigation and targeted interventions (e.g., spraying *Oryctes rhinoceros* pests).
 
 https://github.com/user-attachments/assets/34584588-0f9d-404b-8fed-267057f0ef7f
 
 ### 3. Tree Classification (YOLOv8)
-Classification of the main conditions affecting oil palm trees into three categories (Healthy, Yellowish, Dead) for the analysis of plantation health.
+Multi-class condition assessment categorizing trees into three health statuses (**Healthy**, **Yellowish**, and **Dead**) with distinct symbology.
 
 https://github.com/user-attachments/assets/1938980e-e6e4-4759-9d31-44d6a70f6ded
 
 ### 4. Road Detection (DeepLabV3+)
-Segmentation and extraction of plantation road networks into Shapefile line vectors (polylines) using hybrid pathfinding technology.
+Canopy-resistant semantic segmentation and topological vectorization that extracts plantation road networks into polyline Shapefiles using morphological skeletonization and A* pathfinding.
 
 https://github.com/user-attachments/assets/643d65d7-d6e7-4b14-a943-de487a838b0d
 
-## **User Guide**
-I have provided a step-by-step guide (from data preparation to the execution of each algorithm) [Read the PalmAI User Guide here](https://drive.google.com/file/d/1pgkmoNwnQgRRP3JbT9n_loTzG5tLFDIz/view?usp=sharing).
-
-## **Repository Structure**
-```text
-PalmAI QGIS Plugin/
-├── plugin_qgis/              # Main Plugins folder
-│   ├── metadata.txt
-│   ├── requirements.txt
-│   ├── palmai_plugin.py
-│   ├── icons/                # Visual assets
-│   ├── models/               # Trained weights (YOLO & DeepLab)
-│   ├── scripts/              # Inference algorithms & worker tasks
-│   └── ui/                   # QtDesigner interface design
-├── demo_data/                # Sample raster data for testing the plugin
-├── notebooks/                # Documentation of AI research and training processes
-├── docs/                     # Screenshots of results and guidance
-├── .gitignore
-├── LICENSE
-└── README.md
-```
-## **Tech Stack**
-- **Deep Learning:** PyTorch, YOLOv8, DeepLabV3+, Slicing Iterative Logic
-- **Geospatial Processing:** QGIS Python API (PyQGIS), GeoPandas, Rasterio, Shapely, Fiona
-- **UI/UX:** PyQt5
+---
 
 ## **Installation & Quickstart Guide**
 
-Mulai versi ini, AI inference PalmAI diisolasi dari Python internal QGIS agar **bebas dari masalah bentrok dependensi (dependency hell)**. Plugin QGIS hanya bertindak sebagai antarmuka (thin UI), sementara proses inferensi dapat dijalankan lewat:
-1. **Docker (Rekomendasi)**: Paling stabil, terisolasi 100%, otomatis.
-2. **Virtualenv (Tanpa Docker)**: Cocok untuk macOS (support Apple Silicon MPS) atau pengguna tanpa Docker.
-3. **QGIS Python (Legacy)**: Cara lama (OSGeo4W Shell) tetap didukung.
+### **Prerequisites**
+1. **[QGIS](https://qgis.org/)** (v3.22 or newer recommended).
+2. **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** installed and running on your system.
+   - *Windows Users:* Ensure WSL2 backend and NVIDIA GPU drivers (if available) are enabled.
+   - *macOS Users:* Docker runs on CPU mode. Alternatively, you can use the built-in Virtualenv backend with Apple Silicon (MPS) support.
 
 ---
 
-### **Langkah 1: Pasang Plugin ke QGIS**
-1. Unduh atau clone repositori ini ke komputer Anda.
-2. Salin folder `plugin_qgis`.
-3. Tempel (Paste) folder tersebut ke direktori plugin QGIS Anda, lalu ubah namanya menjadi `PalmAI`:
-   - **Windows (Rekomendasi - User Profile, tanpa perlu akses admin):**
-     `%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\PalmAI`
-     *(Bisa buka Windows Run `Win+R` lalu paste path di atas)*
-   - **Windows (Alternative - System-wide):**
-     `C:\Program Files\QGIS <versi>\apps\qgis\python\plugins\PalmAI`
+### **Step 1: Install the Plugin in QGIS**
+1. Clone or download this repository to your computer.
+2. Copy the `plugin_qgis` folder into your QGIS plugins directory and rename it to `PalmAI`:
+   - **Windows (Recommended - User Profile, no admin rights required):**
+     ```text
+     %APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\PalmAI
+     ```
+     *(Tip: Press `Win + R`, paste the path above without `\PalmAI`, hit Enter, and paste the folder there).*
    - **macOS:**
-     `~/Library/Application Support/QGIS/QGIS3/profiles/default/python/plugins/PalmAI`
+     ```text
+     ~/Library/Application Support/QGIS/QGIS3/profiles/default/python/plugins/PalmAI
+     ```
    - **Linux:**
-     `~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/PalmAI`
-4. Buka aplikasi **QGIS**.
-5. Masuk ke menu **Plugins > Manage and Install Plugins...**
-6. Di tab **Installed**, centang **PalmAI** untuk mengaktifkan plugin. Menu **PalmAI** akan muncul di menu bar QGIS.
+     ```text
+     ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/PalmAI
+     ```
+3. Open **QGIS**.
+4. Navigate to **Plugins > Manage and Install Plugins...**
+5. In the **Installed** tab, check the box next to **PalmAI** to enable it. The **PalmAI** menu will appear in the top toolbar.
 
 ---
 
-### **Langkah 2: Pilih Mode Inferensi (Backend)**
+### **Step 2: Configure Inference Backend**
+Open **Plugins > PalmAI > Settings (Inference Backend)**.
 
-Buka menu **Plugins > PalmAI > Settings (Inference Backend)**.
-
-Pilih opsi yang sesuai dengan kebutuhan Anda:
-
-| Opsi Backend | Kapan Digunakan? | Persiapan yang Dibutuhkan |
+| Backend Option | Recommended Use | Details |
 |---|---|---|
-| **Docker** *(Direkomendasikan)* | Bebas pusing instalasi Python/CUDA. Cocok untuk semua device. | Cukup install & jalankan [Docker Desktop](https://www.docker.com/products/docker-desktop/). Image AI akan diunduh/dibangun otomatis pada pemakaian pertama. |
-| **Virtualenv** | Ingin GPU di Mac (Apple Silicon MPS) atau komputer tidak memiliki Docker. | Pastikan Python 3.9–3.12 terpasang di sistem, lalu cukup klik tombol **"Set up Python environment"** di menu Settings PalmAI. |
-| **QGIS Python (Legacy)** | Sudah berhasil menginstall torch dkk di Python bawaan QGIS. | Ikuti panduan legacy instalasi via OSGeo4W Shell di bawah. |
-| **Automatic** *(Default)* | Mencoba Docker terlebih dahulu, lalu Virtualenv, lalu QGIS Python. | - |
+| **Docker** *(Recommended)* | Default choice for all platforms | Fully isolated. Automatically pulls the pre-built container image (`ghcr.io/anovvy/palmai-core`) on first run. Zero Python package installation required on the host. |
+| **Virtualenv** | macOS (Apple Silicon MPS) or systems without Docker | Creates an isolated virtual environment outside QGIS. Click **"Set up Python environment"** in the Settings dialog to initialize. |
+| **Automatic** | Fallback mode | Checks Docker first, then Virtualenv, then QGIS Python. |
+
+Click **Save** once configured.
 
 ---
 
-### **Langkah 3: Menjalankan & Mengetes Plugin (Testing)**
-
-Untuk menguji apakah plugin sudah berfungsi dengan benar:
-1. Buka salah satu fitur di menu **Plugins > PalmAI**, misalnya:
-   - **Palm Oil Tree Counting**
-2. Pada dialog yang muncul:
-   - **Input Raster**: Pilih file raster contoh yang ada di repositori: `demo_data/orthophoto_sample.tif` (atau ortofoto Anda sendiri).
-   - **Output Bounding Box & Centroid**: Tentukan lokasi dan nama file shapefile (`.shp`) keluaran.
-   - **Device**: Pilih `GPU (CUDA)` jika ada NVIDIA GPU, atau `CPU`.
-3. Klik tombol **Run**.
-4. Proses akan berjalan di latar belakang (dapat dipantau di task manager QGIS).
-5. Setelah selesai, layer hasil deteksi berupa poligon bounding box dan titik pusat pohon akan otomatis dimuat dan distilasi langsung di kanvas peta QGIS!
+### **Step 3: Testing & Running Tools**
+To test the plugin using the bundled sample data:
+1. Open any PalmAI tool from the menu, e.g., **Plugins > PalmAI > Palm Oil Tree Counting**.
+2. Set the tool inputs:
+   - **Input Raster:** Select the sample orthophoto at `demo_data/orthophoto_sample.tif` (or your own GeoTIFF).
+   - **Output Bounding Box & Centroid:** Choose the target `.shp` save locations.
+   - **Device:** Select `GPU (CUDA)` if an NVIDIA GPU is available, or `CPU`.
+3. Click **Run**.
+4. The task will execute in the background via Docker.
+5. Upon completion, the resulting Bounding Box polygons and Centroid points are automatically added and styled on the QGIS map canvas!
 
 ---
 
-### **Opsional: Build Docker Image Sendiri**
-Jika Anda ingin membangun image Docker secara lokal (dari folder `plugin_qgis`):
+## **AI Models & Weights**
+Trained weights are managed automatically:
+- If model files are not present locally in `plugin_qgis/models/`, the plugin automatically downloads them on first use from the official GitHub Release:
+  [PalmAI Releases (tag: models-v1)](https://github.com/Anovvy/PalmAI_Plugin/releases/tag/models-v1).
+- Bundled models:
+  - `yolov8n_counting_1.0.pt` (Tree Counting)
+  - `yolov8n_centertree_1.3.pt` (Center Tree)
+  - `yolov8n_classification_2.1.pt` (Condition Classification)
+  - `deeplabv3+_roaddetection_1.pth.tar` (Road Network Segmentation)
+
+---
+
+## **Building Docker Images Locally (Optional)**
+If you wish to build the container images locally instead of pulling from GHCR:
 ```bash
-# Untuk CPU:
+cd plugin_qgis
+
+# CPU image
 docker build -f docker/Dockerfile.cpu -t ghcr.io/anovvy/palmai-core:cpu .
 
-# Untuk NVIDIA GPU (CUDA):
+# NVIDIA GPU (CUDA) image
 docker build -f docker/Dockerfile.gpu -t ghcr.io/anovvy/palmai-core:gpu .
 ```
 
 ---
 
-## **Panduan Instalasi Legacy (Python Internal QGIS / OSGeo4W Shell)**
-As this plugin runs a deep learning model, it is strongly recommended that you use a device with an NVIDIA GPU (CUDA-enabled). Installation must be carried out via the OSGeo4W Shell built into QGIS.
+## **Repository Structure**
+```text
+PalmAI_Plugin/
+├── plugin_qgis/              # QGIS Plugin package (Thin UI Client)
+│   ├── metadata.txt          # QGIS plugin metadata
+│   ├── palmai_plugin.py      # Plugin entry point & menu setup
+│   ├── backends/             # Execution backends (Docker, Virtualenv, Process Runner)
+│   ├── palmai_core/          # Pure AI inference pipelines (YOLOv8, DeepLabV3+, Worker)
+│   ├── docker/               # Dockerfiles (CPU/GPU) & pinned requirements.lock
+│   ├── models/               # Model weights directory (auto-downloaded if missing)
+│   ├── scripts/              # UI dialog handlers (Counting, Center Tree, Classification, Road)
+│   ├── ui/                   # Qt Designer UI forms
+│   └── icons/                # Interface assets
+├── demo_data/                # Sample orthophoto raster for testing
+├── notebooks/                # Research notebooks & model training history
+├── docs/                     # Documentation assets and screenshots
+├── .github/workflows/        # Automated CI image build workflows
+├── .gitignore
+├── LICENSE
+└── README.md
+```
 
-### Step 1: Install the plugin in QGIS
-1. Clone or download the ZIP file for this repository to your computer.
-2. Open the repository folder, then copy the `plugin_qgis` folder.
-3. Paste that folder into your QGIS plugins directory, and rename it to `PalmAI`.
-    - Windows:
-    `C:\Program Files\QGIS 3.38.3\apps\qgis\python\plugins\PalmAI`
-    (Requires administrator access. If your version of QGIS is different, adjust the number 3.38.3 accordingly)
-    - Mac:
-    `~/Library/Application Support/QGIS/QGIS3/profiles/default/python/plugins/PalmAI`
-### Step 2: Open Terminal and navigate to the folder
-**For Windows users (OSGeo4W Shell):**
-1. Click the Windows Start Menu, search for and open **OSGeo4W Shell** (Run as Administrator).
-2. Change the terminal directory using the `cd` command (**Replace ‘Username’)**:
-```text
-cd "C:\Program Files\QGIS 3.38.3\apps\qgis\python\plugins\PalmAI"
-```
-**For MacOS users (Terminal):**
-1. Open the Mac’s built-in **Terminal** app.
-2. Change the terminal location using the command:
-```text
-cd ~/Library/Application\ Support/QGIS/QGIS3/profiles/default/python/plugins/PalmAI
-```
-### Step 3: Installing Basic Dependencies
-Once the terminal is open in the `PalmAI` folder, run the following command:
-- **Windows:** `pip install -r requirements.txt`
-- **MacOS:** `pip3 install -r requirements.txt`*(Note: If an error occurs, use `/Applications/QGIS.app/Contents/MacOS/bin/python3 -m pip install -r requirements.txt`)*
-### Step 4: PyTorch Instalation
-**For Windows users (NVIDIA CUDA):**
-1. Visit [PyTorch Get Started Page](https://pytorch.org/get-started/locally/).
-2. Select the appropriate OS, package (pip), Python and CUDA version (check using `nvidia-smi`).
-3. Copy the command; here is an example for CUDA 11.8:
-```text
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-```
-**For Windows users without a GPU/Integrated CPU only:**
-Simply run this command in the **OSGeo4W Shell**
-```text
-pip install torch torchvision torchaudio
-``` 
-**For macOS (Apple Silicon / Intel) users:**
-macOS uses Metal (MPS) acceleration, not CUDA. Simply run the standard PyTorch installation:
-```text
-pip3 install torch torchvision torchaudio
-```
-### Step 5: Activate Plugin
-1. Open **QGIS** application
-2. Go to the **Plugins > Manage and Install Plugins** menu.
-3. Find **PalmAI** in the *Installed* tab, then tick the box to enable it.
+---
 
-## **LICENSE**
-This project uses [MIT License](LICENSE)
+## **Tech Stack**
+- **Deep Learning:** PyTorch, YOLOv8, DeepLabV3+, SAHI (Slicing Aided Hyper Inference)
+- **Containerization:** Docker, GitHub Container Registry (GHCR)
+- **Geospatial Processing:** PyQGIS, GeoPandas, Rasterio, Shapely, Fiona
+- **GUI:** PyQt5 / Qt Designer
+
+---
+
+## **User Guide**
+For an in-depth operational guide covering drone data flight planning, radiometric calibration, and parameter optimization, refer to the [PalmAI User Guide](https://drive.google.com/file/d/1pgkmoNwnQgRRP3JbT9n_loTzG5tLFDIz/view?usp=sharing).
+
+---
+
+## **License**
+This project is licensed under the [MIT License](LICENSE).

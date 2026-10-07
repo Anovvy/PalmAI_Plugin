@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Download model weights on demand (stdlib only, runs on the host side)."""
+"""Download model weights on demand from GitHub Releases (stdlib only, runs on host)."""
 
 import os
+import urllib.parse
 import urllib.request
 
-# Upload the files from plugin_qgis/models/ to this GitHub Release (tag: models-v1).
-MODEL_BASE_URL = "https://github.com/Anovvy/PalmAI_Plugin/releases/tag/models-v1"
+MODEL_BASE_URL = "https://github.com/Anovvy/PalmAI_Plugin/releases/download/models-v1/"
 
 
 def ensure_model(filename, models_dir, ctx=None):
@@ -15,17 +15,19 @@ def ensure_model(filename, models_dir, ctx=None):
         return path
 
     os.makedirs(models_dir, exist_ok=True)
-    url = MODEL_BASE_URL + filename
+    url = MODEL_BASE_URL + urllib.parse.quote(filename)
     tmp = path + ".part"
     if ctx:
         ctx.describe(f"Downloading model {filename}...")
         ctx.log(f"Model '{filename}' not found locally. Downloading from {url}", "warning")
     try:
-        with urllib.request.urlopen(url, timeout=60) as resp, open(tmp, "wb") as out:
+        req = urllib.request.Request(url, headers={"User-Agent": "PalmAI-QGIS-Plugin/1.0"})
+        with urllib.request.urlopen(req, timeout=120) as resp, open(tmp, "wb") as out:
             total = int(resp.headers.get("Content-Length", 0))
             done = 0
             while True:
-                ctx and ctx.check_cancel()
+                if ctx:
+                    ctx.check_cancel()
                 chunk = resp.read(1024 * 256)
                 if not chunk:
                     break
@@ -36,6 +38,9 @@ def ensure_model(filename, models_dir, ctx=None):
         os.replace(tmp, path)
     except Exception:
         if os.path.exists(tmp):
-            os.remove(tmp)
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
         raise
     return path

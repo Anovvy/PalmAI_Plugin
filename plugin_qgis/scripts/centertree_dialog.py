@@ -57,6 +57,7 @@ class CenterTreeDialog(QDialog, FORM_CLASS):
         }
 
         if not all([params['raster_path'], params['bbox_output_path'], params['centroid_output_path']]):
+            self.iface.messageBar().pushMessage("Error", "The Raster, Bounding Box and Centroid output fields must be completed!", level=Qgis.Critical)
             return
 
         self.task = PalmAITask(
@@ -71,7 +72,7 @@ class CenterTreeDialog(QDialog, FORM_CLASS):
             return
         total = result['total_detections']
         if total == 0:
-            self.iface.messageBar().pushMessage("Info", "No object.", level=Qgis.Warning)
+            self.iface.messageBar().pushMessage("Info", "No objects were detected.", level=Qgis.Warning)
             return
         self.iface.messageBar().pushMessage("Success", f"Found {total} object.", level=Qgis.Success, duration=10)
         load_detection_layers(self.iface, result['layers'], PLUGIN_NAME)

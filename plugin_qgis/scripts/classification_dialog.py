@@ -62,10 +62,11 @@ class ClassificationDialog(QDialog, FORM_CLASS):
         }
 
         if not all([params['raster_path'], params['bbox_output_path'], params['centroid_output_path']]):
+            self.iface.messageBar().pushMessage("Error", "The Raster, Bounding Box and Centroid output fields must be completed!", level=Qgis.Critical)
             return
 
         self.task = PalmAITask(
-            f"Klasifikasi {os.path.basename(params['raster_path'])}...", 'classification', params, PLUGIN_NAME,
+            f"Classifying {os.path.basename(params['raster_path'])}...", 'classification', params, PLUGIN_NAME,
             self._on_done, models=[('weight_path', WEIGHT_FILENAME)])
         QgsApplication.taskManager().addTask(self.task)
         self.close()
