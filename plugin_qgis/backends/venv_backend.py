@@ -28,18 +28,18 @@ def _py_version(exe):
     return None
 
 
+def _is_qgis_python(exe):
+    if not exe:
+        return False
+    low = exe.lower()
+    return "qgis" in low or "osgeo" in low
+
+
 def find_base_python():
-    """Find a real Python interpreter (NOT the QGIS executable) in the supported range."""
+    """Find a real Python interpreter (NOT the QGIS embedded executable) in the supported range."""
     candidates = []
-    if sys.platform == "win32":
-        candidates += [os.path.join(sys.exec_prefix, "python.exe"),
-                       os.path.join(sys.exec_prefix, "python3.exe")]
-    else:
-        candidates += [os.path.join(sys.exec_prefix, "bin", "python3")]
-    for name in ("python3.12", "python3.11", "python3.10", "python3.9", "python3", "python"):
-        p = shutil.which(name)
-        if p:
-            candidates.append(p)
+
+    # 1. Search Windows py launcher
     if sys.platform == "win32":
         py = shutil.which("py")
         if py:
@@ -51,8 +51,34 @@ def find_base_python():
                         candidates.append(r.stdout.strip())
                 except Exception:
                     pass
+
+        # 2. Check standard Windows standalone Python installation paths
+        local_app = os.environ.get("LOCALAPPDATA", "")
+        prog_files = os.environ.get("ProgramFiles", r"C:\Program Files")
+        for v_tag in ("312", "311", "310", "39"):
+            candidates.extend([
+                rf"C:\Python{v_tag}\python.exe",
+                os.path.join(local_app, "Programs", "Python", f"Python{v_tag}", "python.exe"),
+                os.path.join(prog_files, f"Python{v_tag}", "python.exe"),
+                os.path.join(prog_files, "Python", f"Python{v_tag}", "python.exe"),
+            ])
+
+    # 3. System PATH lookups
+    for name in ("python3.12", "python3.11", "python3.10", "python3.9", "python3", "python"):
+        p = shutil.which(name)
+        if p:
+            candidates.append(p)
+
+    # 4. sys.exec_prefix candidate (macOS / Linux or non-QGIS standalone)
+    if not _is_qgis_python(sys.exec_prefix):
+        if sys.platform == "win32":
+            candidates += [os.path.join(sys.exec_prefix, "python.exe"),
+                           os.path.join(sys.exec_prefix, "python3.exe")]
+        else:
+            candidates += [os.path.join(sys.exec_prefix, "bin", "python3")]
+
     for exe in candidates:
-        if exe and os.path.exists(exe):
+        if exe and os.path.isfile(exe) and not _is_qgis_python(exe):
             ver = _py_version(exe)
             if ver and SUPPORTED[0] <= ver <= SUPPORTED[1]:
                 return exe

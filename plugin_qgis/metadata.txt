@@ -5,6 +5,7 @@
 [general]
 name=PalmAI
 qgisMinimumVersion=3.0
+qgisMaximumVersion=3.99
 description=Mapping automation plugin for Palm Oil Industry
 version=1.0
 author=Bayu Nabiil
