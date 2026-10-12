@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
-"""Docker backend: one ephemeral `docker run --rm` container per job (no server, no ports)."""
+"""
+Docker backend: one ephemeral `docker run --rm` container per job (no server, no ports).
+
+Security & Stability:
+- Least-privilege container volume mounts (inputs :ro, models :ro, job json :ro, outputs :rw).
+- Versioned container image resolution with backward-compatible fallback tags.
+- Robust GPU probing avoiding false positives on systems with missing drivers.
+- Complete container lifecycle cancellation and temporary working file cleanup.
+"""
 
 import json
 import os
@@ -9,11 +17,13 @@ import sys
 import tempfile
 import uuid
 
-from .base import InferenceBackend, BackendError, BackendUnavailable
+from .base import BackendError, BackendUnavailable, InferenceBackend
 from .path_mapping import PathMapper
-from .process_runner import run_worker, run_command_streaming, _popen_flags
+from .process_runner import _popen_flags, run_command_streaming, run_worker
 
 IMAGE_REPO = "ghcr.io/anovvy/palmai-core"
+DEFAULT_VERSION_TAG = "v2.0.0"
+LEGACY_TAG_COMPAT = True
 
 
 def _windows_docker_candidates():
@@ -74,7 +84,6 @@ def find_docker():
 
     for candidate in candidates:
         if candidate and os.path.isfile(candidate):
-            # Ensure the directory of docker is prepended to PATH for child processes
             docker_dir = os.path.dirname(candidate)
             current_path = os.environ.get("PATH", "")
             if docker_dir.lower() not in current_path.lower():
@@ -84,8 +93,15 @@ def find_docker():
 
 
 def _run(cmd, timeout=20):
-    return subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace",
-                          timeout=timeout, **_popen_flags())
+    return subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=timeout,
+        **_popen_flags(),
+    )
 
 
 def get_remote_image_info(docker_bin, image):
@@ -123,15 +139,15 @@ class DockerBackend(InferenceBackend):
             return "Docker is not installed (or not on PATH). Install Docker Desktop first."
         try:
             r = _run([self.docker, "info", "--format", "{{.ServerVersion}}"], timeout=15)
-        except Exception as e:  # noqa
+        except Exception as e:
             return f"Cannot talk to Docker: {e}"
         if r.returncode != 0:
             return "Docker is installed but the daemon is not running. Start Docker Desktop and try again."
         return None
 
     def has_nvidia_runtime(self):
-        """Check whether Docker can actually run with NVIDIA GPU acceleration.
-
+        """
+        Check whether Docker can actually run with NVIDIA GPU acceleration.
         Verifies that Docker daemon supports nvidia runtime AND that an NVIDIA GPU
         adapter/driver is physically present on the host (prevents WSL2 false positives).
         """
@@ -162,73 +178,120 @@ class DockerBackend(InferenceBackend):
 
         return True
 
-    def image_name(self, gpu):
+    def get_configured_version(self):
+        """Read configured version or return default pinned version."""
+        try:
+            from qgis.PyQt.QtCore import QSettings
+            tag = QSettings().value("PalmAI/docker_version", DEFAULT_VERSION_TAG)
+            return tag if tag else DEFAULT_VERSION_TAG
+        except Exception:
+            return DEFAULT_VERSION_TAG
+
+    def image_name(self, gpu, version=None):
+        ver = version or self.get_configured_version()
+        variant = "gpu" if gpu else "cpu"
+        return f"{IMAGE_REPO}:{ver}-{variant}"
+
+    def legacy_image_name(self, gpu):
         return f"{IMAGE_REPO}:{'gpu' if gpu else 'cpu'}"
 
     def image_present(self, image):
+        if not self.docker:
+            return False
         return _run([self.docker, "image", "inspect", image]).returncode == 0
 
+    def get_image_digest(self, image):
+        """Return image repo digest (sha256:...) if present locally."""
+        try:
+            r = _run([self.docker, "image", "inspect", "--format", "{{index .RepoDigests 0}}", image], timeout=10)
+            if r.returncode == 0 and r.stdout.strip():
+                return r.stdout.strip()
+        except Exception:
+            pass
+        return None
+
     def ensure_image(self, gpu, ctx):
-        image = self.image_name(gpu)
-        if self.image_present(image):
-            return image
+        primary_image = self.image_name(gpu)
+        legacy_image = self.legacy_image_name(gpu)
 
-        total_bytes, total_layers = get_remote_image_info(self.docker, image)
-        if total_bytes and total_bytes >= 1024 * 1024 * 1024:
-            size_str = f"{total_bytes / (1024 * 1024 * 1024):.2f} GB"
-        elif total_bytes:
-            size_str = f"{total_bytes / (1024 * 1024):.1f} MB"
-        else:
-            size_str = "~656 MB" if not gpu else "~3.14 GB"
+        # 1. Use primary versioned image if already present
+        if self.image_present(primary_image):
+            return primary_image
 
-        ctx.log(
-            f"Docker image '{image}' not found locally. Downloading from GitHub Container Registry (GHCR)... "
-            f"Estimated download size: {size_str} (first run only).", "info")
-        ctx.describe(f"Pulling Docker image {image} ({size_str})...")
+        # 2. Check legacy tag if already present locally
+        if LEGACY_TAG_COMPAT and self.image_present(legacy_image):
+            ctx.log(f"Using existing local compatibility image '{legacy_image}'.", "info")
+            return legacy_image
 
-        completed_downloads = set()
-        completed_pulls = set()
+        # 3. Pull primary versioned image, falling back to legacy tag on GHCR
+        target_images = [primary_image]
+        if LEGACY_TAG_COMPAT and legacy_image != primary_image:
+            target_images.append(legacy_image)
 
-        def relay(line):
-            sline = line.strip()
-            if not sline:
-                return
-
-            parts = sline.split(":")
-            if len(parts) >= 2:
-                layer_id = parts[0].strip()
-                status = parts[1].strip()
-                if "Download complete" in status:
-                    completed_downloads.add(layer_id)
-                elif "Pull complete" in status:
-                    completed_pulls.add(layer_id)
-
-            if total_layers > 0:
-                pct = int(
-                    (len(completed_downloads) * 50 / total_layers) +
-                    (len(completed_pulls) * 50 / total_layers)
-                )
-                pct = min(99, max(1, pct))
-                ctx.progress(pct)
-                ctx.describe(f"Downloading Docker image ({size_str}) [{pct}%]: {sline[:70]}")
+        for img in target_images:
+            total_bytes, total_layers = get_remote_image_info(self.docker, img)
+            if total_bytes and total_bytes >= 1024 * 1024 * 1024:
+                size_str = f"{total_bytes / (1024 * 1024 * 1024):.2f} GB"
+            elif total_bytes:
+                size_str = f"{total_bytes / (1024 * 1024):.1f} MB"
             else:
-                ctx.describe(f"Pulling Docker image: {sline[:100]}")
+                size_str = "~656 MB" if not gpu else "~3.14 GB"
 
-        if run_command_streaming([self.docker, "pull", image], ctx, on_line=relay) == 0:
-            ctx.progress(100)
-            ctx.log(f"Docker image '{image}' successfully pulled and ready.", "info")
-            return image
+            ctx.log(
+                f"Docker image '{img}' not found locally. Downloading from GitHub Container Registry (GHCR)... "
+                f"Estimated download size: {size_str} (first run only).",
+                "info",
+            )
+            ctx.describe(f"Pulling Docker image {img} ({size_str})...")
 
+            completed_downloads = set()
+            completed_pulls = set()
+
+            def relay(line):
+                sline = line.strip()
+                if not sline:
+                    return
+
+                parts = sline.split(":")
+                if len(parts) >= 2:
+                    layer_id = parts[0].strip()
+                    status = parts[1].strip()
+                    if "Download complete" in status:
+                        completed_downloads.add(layer_id)
+                    elif "Pull complete" in status:
+                        completed_pulls.add(layer_id)
+
+                if total_layers > 0:
+                    pct = int(
+                        (len(completed_downloads) * 50 / total_layers)
+                        + (len(completed_pulls) * 50 / total_layers)
+                    )
+                    pct = min(99, max(1, pct))
+                    ctx.progress(pct)
+                    ctx.describe(f"Downloading Docker image ({size_str}) [{pct}%]: {sline[:70]}")
+                else:
+                    ctx.describe(f"Pulling Docker image: {sline[:100]}")
+
+            if run_command_streaming([self.docker, "pull", img], ctx, on_line=relay) == 0:
+                ctx.progress(100)
+                ctx.log(f"Docker image '{img}' successfully pulled and verified.", "info")
+                return img
+
+        # 4. Fallback to building locally
         dockerfile = os.path.join(self.plugin_dir, "docker", f"Dockerfile.{'gpu' if gpu else 'cpu'}")
         if os.path.exists(dockerfile):
-            ctx.log("Pull failed. Building the image locally instead...", "warning")
+            ctx.log("Remote pull failed. Building the image locally instead...", "warning")
             ctx.describe("Building Docker image locally...")
             rc = run_command_streaming(
-                [self.docker, "build", "-f", dockerfile, "-t", image, self.plugin_dir], ctx, on_line=relay)
+                [self.docker, "build", "-f", dockerfile, "-t", primary_image, self.plugin_dir],
+                ctx,
+                on_line=relay,
+            )
             if rc == 0:
                 ctx.progress(100)
-                return image
-        raise BackendError(f"Could not pull or build the Docker image '{image}'.")
+                return primary_image
+
+        raise BackendError(f"Could not pull or build the Docker image '{primary_image}'.")
 
     # --- job execution ------------------------------------------------------
     def run(self, job, params, ctx):
@@ -239,10 +302,13 @@ class DockerBackend(InferenceBackend):
         want_gpu = params.get("device", "cpu") != "cpu"
         use_gpu = want_gpu and self.has_nvidia_runtime()
         if want_gpu and not use_gpu:
-            ctx.log("GPU requested, but Docker has no NVIDIA runtime. Running the container on CPU.", "warning")
+            ctx.log("GPU requested, but Docker has no NVIDIA runtime. Running container on CPU.", "warning")
             params = dict(params, device="cpu")
 
         image = self.ensure_image(use_gpu, ctx)
+        digest = self.get_image_digest(image)
+        if digest:
+            ctx.log(f"Execution runtime image digest: {digest}", "info")
 
         models_dir = os.path.abspath(os.path.join(self.plugin_dir, "models"))
         mapper = PathMapper()
@@ -260,10 +326,18 @@ class DockerBackend(InferenceBackend):
             cmd = [self.docker, "run", "--rm", "--name", name, "-e", "PYTHONUNBUFFERED=1"]
             if use_gpu:
                 cmd += ["--gpus", "all"]
-            for host_dir, cdir in mapper.mounts():
-                cmd += ["-v", f"{host_dir}:{cdir}"]
-            cmd += ["-v", f"{models_dir}:/models:ro", "-v", f"{job_dir}:/job:ro", image,
-                    "python", "-m", "palmai_core.worker", "/job/job.json"]
+
+            # Least privilege volume mounts: input paths :ro, output paths :rw
+            for host_dir, cdir, mode in mapper.mount_specs():
+                cmd += ["-v", f"{host_dir}:{cdir}:{mode}"]
+
+            # Models mounted strictly read-only; job payload mounted read-only
+            cmd += [
+                "-v", f"{models_dir}:/models:ro",
+                "-v", f"{job_dir}:/job:ro",
+                image,
+                "python", "-m", "palmai_core.worker", "/job/job.json",
+            ]
 
             ctx.describe("Starting container...")
 

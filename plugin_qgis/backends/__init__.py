@@ -3,6 +3,17 @@ import os
 
 from .base import BackendError, BackendUnavailable
 
+__all__ = [
+    "BACKEND_CHOICES",
+    "PLUGIN_DIR",
+    "BackendError",
+    "BackendUnavailable",
+    "create_backend",
+    "default_env_dir",
+    "get_choice",
+    "set_choice",
+]
+
 BACKEND_CHOICES = (
     ("auto", "Automatic (Docker > Virtualenv > QGIS Python)"),
     ("docker", "Docker (recommended, most reproducible)"),
@@ -31,8 +42,8 @@ def set_choice(choice):
 def create_backend(choice=None, plugin_dir=PLUGIN_DIR, env_dir=None):
     """Instantiate the configured backend. Raises BackendUnavailable with guidance."""
     from .docker_backend import DockerBackend
-    from .venv_backend import VenvBackend
     from .local_backend import LocalBackend
+    from .venv_backend import VenvBackend
 
     choice = choice or get_choice()
     env_dir = env_dir or default_env_dir()

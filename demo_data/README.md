@@ -26,3 +26,15 @@ Due to the large file sizes of geospatial GeoTIFF rasters, these datasets are ho
    - Open the desired tool from **Plugins > PalmAI** (e.g., *Palm Oil Tree Counting*).
    - In the **Input Raster** selector, choose `Demo_Data_1.tif` (or `Demo_Data_2.tif` for Centre Tree).
    - Specify output shapefile (`.shp`) paths and click **Run**.
+5. **Inspect Outputs & Provenance:**
+   - Layers are automatically rendered with tailored GIS styling in QGIS.
+   - An execution record `run_manifest.json` is generated alongside output shapefiles, documenting CRS metadata, parameters, feature counts, and output file SHA-256 checksums.
+
+---
+
+## **Relationship to CI/CD & Automated Testing**
+
+- **Automated CI Quality Gates (`tests/`):**
+  Continuous integration tests in GitHub Actions do **not** download these large multi-gigabyte rasters. Instead, CI uses fast, in-memory synthetic GeoTIFF fixtures (`tests/test_geospatial_core.py` and `tests/test_geospatial_qa.py`) to validate spatial CRS mapping, affine transformations, bounding boxes, centroid points, and road skeletonization in seconds.
+- **End-to-End & Checkpoint Evaluation:**
+  `Demo_Data_1.tif` and `Demo_Data_2.tif` are reserved for manual end-to-end verification, QGIS map canvas rendering checks, and real GPU inference benchmarking.

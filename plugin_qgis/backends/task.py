@@ -3,11 +3,11 @@
 
 import traceback
 
-from qgis.core import QgsTask, QgsMessageLog, Qgis
+from qgis.core import Qgis, QgsMessageLog, QgsTask
 
-from ..palmai_core.context import JobContext, JobCanceled
-from .base import BackendError
+from ..palmai_core.context import JobCanceled, JobContext
 from . import create_backend
+from .base import BackendError
 
 _LEVELS = {"info": Qgis.Info, "success": Qgis.Success, "warning": Qgis.Warning, "critical": Qgis.Critical}
 
@@ -41,6 +41,7 @@ class PalmAITask(QgsTask):
         ctx = self._ctx()
         try:
             import os
+
             from ..palmai_core.model_store import ensure_model
             models_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models")
             for key, filename in self.models:

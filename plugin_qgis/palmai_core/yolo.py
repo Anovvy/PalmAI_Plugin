@@ -109,18 +109,17 @@ def run_yolo_job(job, p, ctx: JobContext):
             confidence (counting/centertree) or class_confidences (classification)
     Returns: {'total_detections': int, 'layers': [ {path, name, type, class_name?} ]}
     """
+    import fiona
+    import geopandas
     import numpy as np
     import rasterio
-    import geopandas
-    import fiona
     from PIL import Image
     from rasterio.windows import Window
-    from shapely.geometry import Polygon, mapping
     from sahi import AutoDetectionModel
     from sahi.prediction import ObjectPrediction
+    from shapely.geometry import Polygon, mapping
 
     classification = job == "classification"
-    plugin_name = PLUGIN_NAMES[job]
     device = resolve_device(p.get("device", "cpu"))
     if p.get("device", "cpu") != "cpu" and device == "cpu":
         ctx.log("GPU requested but not available. Running on CPU.", "warning")
@@ -276,5 +275,24 @@ def run_yolo_job(job, p, ctx: JobContext):
             for w in writers_point.values():
                 w.close()
 
+    manifest_path = None
+    try:
+        from .provenance import build_run_manifest, write_run_manifest
+        out_dir = os.path.dirname(os.path.abspath(p["bbox_output_path"]))
+        input_meta = {
+            "crs": str(source_crs),
+            "width": img_w,
+            "height": img_h,
+        }
+        manifest = build_run_manifest(
+            job, p, {"total_detections": detections_in_aoi, "layers": layers}, input_meta=input_meta
+        )
+        manifest_path = write_run_manifest(out_dir, manifest)
+    except Exception as e:
+        ctx.log(f"Notice: could not emit run_manifest: {e}", "info")
+
     ctx.progress(100)
-    return {"total_detections": detections_in_aoi, "layers": layers}
+    result_data = {"total_detections": detections_in_aoi, "layers": layers}
+    if manifest_path:
+        result_data["manifest_path"] = manifest_path
+    return result_data

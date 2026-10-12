@@ -49,10 +49,10 @@ def main(argv):
         print("usage: worker JOB.json | --check", file=sys.stderr)
         return 2
 
-    from .context import JobContext, JobCanceled
+    from .context import JobCanceled, JobContext
     from .runner import run_job
 
-    with open(argv[1], "r", encoding="utf-8") as f:
+    with open(argv[1], encoding="utf-8") as f:
         payload = json.load(f)
 
     ctx = JobContext(

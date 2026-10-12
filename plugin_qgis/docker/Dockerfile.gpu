@@ -1,8 +1,15 @@
 # PalmAI inference image - NVIDIA GPU (CUDA 12.1 wheels bundle the CUDA runtime;
 # the host only needs an NVIDIA driver + NVIDIA Container Toolkit / Docker Desktop WSL2 GPU support)
 # Build (from the plugin_qgis directory):
-#   docker build -f docker/Dockerfile.gpu -t ghcr.io/anovvy/palmai-core:gpu .
+#   docker build -f docker/Dockerfile.gpu -t ghcr.io/anovvy/palmai-core:v2.0.0-gpu .
 FROM python:3.11-slim
+
+LABEL org.opencontainers.image.title="PalmAI Inference Engine (CUDA GPU)" \
+      org.opencontainers.image.description="Decoupled deep learning inference container for PalmAI QGIS Plugin with CUDA" \
+      org.opencontainers.image.url="https://github.com/Anovvy/PalmAI_Plugin" \
+      org.opencontainers.image.source="https://github.com/Anovvy/PalmAI_Plugin" \
+      org.opencontainers.image.vendor="PalmAI" \
+      org.opencontainers.image.licenses="MIT"
 
 ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1 \
     NVIDIA_VISIBLE_DEVICES=all NVIDIA_DRIVER_CAPABILITIES=compute,utility
