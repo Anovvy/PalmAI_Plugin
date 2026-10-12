@@ -56,8 +56,8 @@ class TestGeospatialCore(unittest.TestCase):
             # Simulate object detection pixel coordinates (x1, y1, x2, y2)
             px_minx, px_miny, px_maxx, px_maxy = 20, 20, 40, 40
 
-            top_left = tf * (px_minx, px_miny) if hasattr(tf, "__mul__") else (tf @ (px_minx, px_miny))
-            bottom_right = tf * (px_maxx, px_maxy) if hasattr(tf, "__mul__") else (tf @ (px_maxx, px_maxy))
+            top_left = tf @ (px_minx, px_miny) if hasattr(tf, "__matmul__") else (tf * (px_minx, px_miny))
+            bottom_right = tf @ (px_maxx, px_maxy) if hasattr(tf, "__matmul__") else (tf * (px_maxx, px_maxy))
 
             # Construct spatial polygon
             poly = Polygon.from_bounds(top_left[0], bottom_right[1], bottom_right[0], top_left[1])
@@ -83,8 +83,8 @@ class TestGeospatialCore(unittest.TestCase):
             categories = ["Healthy", "Yellowish", "Dead"]
 
             for i in range(3):
-                p1 = tf * (10 + i * 20, 10 + i * 20)
-                p2 = tf * (25 + i * 20, 25 + i * 20)
+                p1 = tf @ (10 + i * 20, 10 + i * 20) if hasattr(tf, "__matmul__") else tf * (10 + i * 20, 10 + i * 20)
+                p2 = tf @ (25 + i * 20, 25 + i * 20) if hasattr(tf, "__matmul__") else tf * (25 + i * 20, 25 + i * 20)
                 poly = Polygon.from_bounds(p1[0], p2[1], p2[0], p1[1])
                 boxes.append(poly)
                 centroids.append(poly.centroid)

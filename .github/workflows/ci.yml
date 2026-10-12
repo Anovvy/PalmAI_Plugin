@@ -2,7 +2,7 @@ name: PalmAI CI Quality Gates
 
 on:
   push:
-    branches: [master, main, docker-integration]
+    branches: [master, docker-integration]
     paths:
       - "plugin_qgis/**"
       - "tests/**"
@@ -11,7 +11,7 @@ on:
       - "pyproject.toml"
       - "requirements-dev.txt"
   pull_request:
-    branches: [master, main]
+    branches: [master, docker-integration]
     paths:
       - "plugin_qgis/**"
       - "tests/**"

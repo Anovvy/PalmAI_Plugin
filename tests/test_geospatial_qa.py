@@ -9,7 +9,13 @@ import unittest
 
 import numpy as np
 from shapely.geometry import LineString
-from skimage.morphology import skeletonize
+
+try:
+    from skimage.morphology import skeletonize
+
+    HAS_SKIMAGE = True
+except ImportError:
+    HAS_SKIMAGE = False
 
 from plugin_qgis.palmai_core.provenance import (
     build_run_manifest,
@@ -24,6 +30,7 @@ class TestGeospatialDomainQA(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
+    @unittest.skipUnless(HAS_SKIMAGE, "scikit-image is not installed")
     def test_road_skeletonization_and_line_topology(self):
         # Create a synthetic binary mask with a 6-pixel wide road strip
         mask = np.zeros((100, 100), dtype=np.uint8)
