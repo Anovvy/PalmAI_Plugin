@@ -1,0 +1,55 @@
+name: Package & Release PalmAI QGIS Plugin
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version_tag:
+        description: "Release Version Tag (e.g., v2.0.0)"
+        required: true
+        default: "v2.0.0"
+
+permissions:
+  contents: write
+
+jobs:
+  package-and-release:
+    name: Package Plugin ZIP & Create Release Assets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Determine Release Tag
+        id: tag_info
+        run: |
+          TAG="${{ github.ref_name }}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.version_tag }}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Run Plugin Packaging Script
+        run: |
+          python scripts/package_plugin.py --dist-dir dist
+
+      - name: Calculate Release Checksum
+        run: |
+          cd dist
+          sha256sum PalmAI.zip > PalmAI.zip.sha256
+          cat PalmAI.zip.sha256 >> $GITHUB_STEP_SUMMARY
+
+      - name: Create or Update GitHub Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag_info.outputs.tag }}
+          files: |
+            dist/PalmAI.zip
+            dist/PalmAI.zip.sha256
+          generate_release_notes: true

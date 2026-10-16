@@ -2,17 +2,19 @@
 ## A Deep Learning-powered QGIS plugin for automated feature extraction from oil palm plantation drone imagery.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Docker](https://img.shields.io/badge/Inference-Docker%20Container-blue.svg)](https://www.docker.com/)
-[![Python](https://img.shields.io/badge/Python-3.11-green.svg)](https://www.python.org/)
+[![Tests](https://img.shields.io/badge/Tests-34%20Passed-brightgreen.svg)](tests/)
+[![Inference: Docker](https://img.shields.io/badge/Inference-Docker%20Container-blue.svg)](https://www.docker.com/)
+[![Python: 3.9--3.12](https://img.shields.io/badge/Python-3.9%20|%203.11%20|%203.12-green.svg)](https://www.python.org/)
+[![QGIS: 3.22--3.99](https://img.shields.io/badge/QGIS-3.22%20to%203.99%20LTR-darkgreen.svg)](https://qgis.org/)
 
 ---
 
 ## **Description**
 PalmAI automates the spatial analysis and data processing workflow for oil palm plantations, replacing manual digitization with state-of-the-art Deep Learning models. By combining **YOLOv8** object detection and **DeepLabV3+** semantic segmentation with specialized geospatial post-processing, PalmAI delivers rapid, reliable, and operationally accurate vector outputs directly into QGIS.
 
-To eliminate dependency conflicts ("dependency hell") across different operating systems and QGIS environments, PalmAI uses a **decoupled architecture**:
+To eliminate dependency conflicts ("dependency hell") across different operating systems and QGIS environments, PalmAI uses an isolated **decoupled architecture**:
 - **QGIS Plugin (Thin Client):** Manages user inputs, parameters, and renders vector/raster layers seamlessly in QGIS.
-- **Inference Engine (Isolated Docker Container):** Runs PyTorch, CUDA, SAHI, and geospatial processing libraries in a dedicated, version-pinned environment.
+- **Inference Engine (Isolated Container / Virtualenv):** Runs PyTorch, CUDA, SAHI, and geospatial processing libraries in a dedicated, version-pinned environment with least-privilege volume mounts.
 
 ---
 
@@ -39,23 +41,44 @@ Canopy-resistant semantic segmentation and topological vectorization that extrac
 https://github.com/user-attachments/assets/643d65d7-d6e7-4b14-a943-de487a838b0d
 
 ---
+
 ## **Repository Structure**
 ```text
 PalmAI_Plugin/
 ├── plugin_qgis/              # QGIS Plugin package (Thin UI Client)
-│   ├── metadata.txt          # QGIS plugin metadata
+│   ├── metadata.txt          # Validated QGIS plugin metadata (v1.0.0, QGIS 3.22-3.99)
 │   ├── palmai_plugin.py      # Plugin entry point & menu setup
-│   ├── backends/             # Execution backends (Docker, Virtualenv, Process Runner)
-│   ├── palmai_core/          # Pure AI inference pipelines (YOLOv8, DeepLabV3+, Worker)
-│   ├── docker/               # Dockerfiles (CPU/GPU) & pinned requirements.lock
-│   ├── models/               # Model weights directory (auto-downloaded if missing)
+│   ├── icon.png              # Plugin manager icon
+│   ├── backends/             # Execution backends (Docker, Virtualenv, PathMapper)
+│   ├── palmai_core/          # Core pipelines (YOLOv8, DeepLabV3+, Worker, ModelStore, Provenance)
+│   ├── docker/               # Dockerfiles (CPU/CUDA GPU) & pinned requirements.lock
+│   ├── models/               # Model weights directory (SHA-256 verified & auto-downloaded)
 │   ├── scripts/              # UI dialog handlers (Counting, Center Tree, Classification, Road)
 │   ├── ui/                   # Qt Designer UI forms
 │   └── icons/                # Interface assets
-├── demo_data/                # Sample orthophoto raster for testing
-├── notebooks/                # Research notebooks & model training history
-├── docs/                     # Documentation assets and screenshots
-├── .github/workflows/        # Automated CI image build workflows
+├── tests/                    # Deterministic automated test suite (34 passing tests)
+│   ├── test_docker_backend.py      # Docker daemon diagnostics, pull, fallback, and GPU probe
+│   ├── test_geospatial_core.py     # Affine transforms, bboxes, centroids, and Shapefiles
+│   ├── test_geospatial_qa.py       # Road skeleton topology and run_manifest provenance
+│   ├── test_model_store.py         # Cryptographic SHA-256 checksums, retries, and atomic .part
+│   ├── test_path_mapping.py        # Least-privilege mounts (:ro inputs, :rw outputs), unicode paths
+│   ├── test_plugin_metadata.py     # QGIS metadata INI syntax, URL validity, and LTR versions
+│   ├── test_venv_backend.py        # Standalone Python detection and PyTorch wheel indexes
+│   └── test_worker_protocol.py     # @@PALMAI@@ JSON-lines IPC protocol and error relay
+├── scripts/
+│   └── package_plugin.py     # Release packager creating PalmAI.zip (excluding large weights)
+├── demo_data/                # Sample orthophoto raster guidance
+├── notebooks/                # R&D training notebooks, tuning history, and model genesis
+├── docs/                     # Technical architecture documentation
+│   ├── ci-cd.md              # CI/CD quality gates, workflows, and GHCR delivery
+│   ├── release-policy.md     # SemVer, compatibility matrix, and model hashes
+│   └── test-matrix.md        # Test execution tiers and platform matrix
+├── .github/workflows/        # Automated GitHub Actions pipelines
+│   ├── ci.yml                # PR quality gate: Ruff, pytest matrix, Docker CPU smoke
+│   ├── publish-images.yml    # Versioned container publisher (vX.Y.Z-cpu/gpu to GHCR)
+│   └── release-plugin.yml    # Plugin ZIP packager & GitHub Release asset publisher
+├── pyproject.toml            # Project configuration (pytest & ruff linter settings)
+├── requirements-dev.txt      # Development and testing dependencies
 ├── .gitignore
 ├── LICENSE
 └── README.md
@@ -64,10 +87,11 @@ PalmAI_Plugin/
 ---
 
 ## **Tech Stack**
-- **Deep Learning:** PyTorch, YOLOv8, DeepLabV3+, SAHI (Slicing Aided Hyper Inference)
-- **Containerization:** Docker, GitHub Container Registry (GHCR)
-- **Geospatial Processing:** PyQGIS, GeoPandas, Rasterio, Shapely, Fiona
-- **GUI:** PyQt5 / Qt Designer
+- **Deep Learning:** PyTorch (v2.5.1), YOLOv8 Nano, DeepLabV3+ ResNet50, SAHI (Slicing Aided Hyper Inference)
+- **Containerization & Delivery:** Docker, GitHub Container Registry (GHCR), OCI Labels
+- **Geospatial Processing:** PyQGIS, GeoPandas, Rasterio, Shapely, Fiona, scikit-image
+- **GUI:** PyQt5 / Qt Designer (QGIS 3.x LTR)
+- **Quality & Testing:** Pytest, Ruff, GitHub Actions CI/CD
 
 ---
 
@@ -84,7 +108,7 @@ For an in-depth operational guide covering drone data flight planning, radiometr
 2. **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** (Recommended inference backend):
    - Needs to be installed and **running** (daemon active in the system tray) when executing PalmAI tasks.
    - *Windows Users:* Requires WSL 2 (Windows Subsystem for Linux). Automatically supports both per-user and system-wide Docker Desktop installations.
-   - *macOS Users:* Docker runs in CPU mode. (Or use the Virtualenv backend for Apple Silicon MPS).
+   - *macOS Users:* Docker runs in CPU mode. (Or use the Virtualenv backend for native Apple Silicon MPS).
    - *(Alternative)*: If you do not want to install Docker, you can use the built-in **Virtualenv backend** instead (requires standalone Python 3.9–3.12, see [Step 2](#step-2-configure-inference-backend)).
 
 <details>
@@ -151,29 +175,25 @@ Follow these steps to set up Docker Desktop on macOS:
 ---
 
 ### **Step 1: Install the Plugin in QGIS**
-1. Clone or download this repository to your computer.
+
+#### **Method A: Install via Official Release ZIP (Recommended)**
+1. Go to the [Releases](https://github.com/Anovvy/PalmAI_Plugin/releases) page and download `PalmAI.zip`.
+2. In QGIS, navigate to **Plugins > Manage and Install Plugins... > Install from ZIP**.
+3. Select the downloaded `PalmAI.zip` and click **Install Plugin**.
+
+#### **Method B: Manual / Repository Installation**
+1. Clone or download this repository.
 2. Copy the `plugin_qgis` folder into your QGIS plugins directory and rename it to `PalmAI`:
-   - **Windows (Recommended - User Profile):**
-     ```text
-     %APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\PalmAI
-     ```
+   - **Windows:**
+     `%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\PalmAI`  
      *(Full path: `C:\Users\<Your-Username>\AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins\PalmAI`)*  
-     > **Quick Tip:** Press `Win + R`, paste `%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins`, and press **Enter** to open the folder directly without typing long paths. Alternatively, in QGIS, click **Settings > User Profiles > Open Active Profile Folder** and navigate to `python/plugins`.
-     >
-     > *(For developers)*: Instead of copying, you can create a Directory Junction so edits in your repo are reflected in QGIS in real time:  
+     > *(For developers)*: You can create a Directory Junction so repo changes reflect instantly:  
      > `mklink /J "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\PalmAI" "<path-to-repo>\plugin_qgis"`
-     
    - **macOS:**
-     ```text
-     ~/Library/Application Support/QGIS/QGIS3/profiles/default/python/plugins/PalmAI
-     ```
+     `~/Library/Application Support/QGIS/QGIS3/profiles/default/python/plugins/PalmAI`
    - **Linux:**
-     ```text
-     ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/PalmAI
-     ```
-3. Open **QGIS**.
-4. Navigate to **Plugins > Manage and Install Plugins...**
-5. In the **Installed** tab, check the box next to **PalmAI** to enable it. The **PalmAI** menu will appear in the top toolbar.
+     `~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/PalmAI`
+3. In QGIS, open **Plugins > Manage and Install Plugins... > Installed**, and enable **PalmAI**.
 
 ---
 
@@ -182,13 +202,9 @@ Open **Plugins > PalmAI > Settings (Inference Backend)**.
 
 | Backend Option | Recommended Use | Details |
 |---|---|---|
-| **Docker** *(Recommended)* | Default choice for all platforms | Fully isolated. Automatically detects Docker Desktop across Windows, macOS, and Linux (including per-user and system-wide installation locations). Automatically pulls pre-built container image (`ghcr.io/anovvy/palmai-core`) on first run. Automatically selects CPU mode if no physical NVIDIA GPU is installed. Zero Python package installation required on the host. |
+| **Docker** *(Recommended)* | Default choice for all platforms | Fully isolated. Automatically detects Docker Desktop across Windows, macOS, and Linux. Pulls verified container images (`ghcr.io/anovvy/palmai-core:v2.0.0-cpu` or `:v2.0.0-gpu`). Applies least-privilege volume isolation (`:ro` inputs and weights, `:rw` outputs). Zero host Python package installation required. |
 | **Virtualenv** | macOS (Apple Silicon MPS) or systems without Docker | Creates an isolated virtual environment outside QGIS. Requires standalone **Python 3.9–3.12** from [python.org](https://www.python.org/downloads/) on your host machine. Click **"Set up Python environment"** in the Settings dialog to initialize. |
 | **Automatic** | Fallback mode | Checks Docker first, then Virtualenv, then QGIS Python. |
-
-> **NOTE**
-> - **Docker Backend:** Ensure Docker Desktop is running (daemon active in system tray) before opening the settings dialog or clicking **Check status**.
-> - **Virtualenv Backend:** On Windows, do **not** use Python 3.14+ (PyTorch does not yet provide official wheels) or QGIS's embedded Python. Use standalone Python 3.11 or 3.12 from python.org with the *"Add python.exe to PATH"* option checked.
 
 Click **Save** once configured.
 
@@ -202,59 +218,80 @@ To test the plugin using the sample demo datasets:
    - **Output Bounding Box & Centroid:** Choose the target `.shp` save locations.
    - **Device:** Select `GPU (CUDA)` if an NVIDIA GPU is available, or `CPU`.
 3. Click **Run**.
-4. The task will execute in the background via Docker (ensure Docker Desktop is running).
-5. Upon completion, the resulting Bounding Box polygons and Centroid points are automatically added and styled on the QGIS map canvas!
+4. The task will execute in the background via Docker or Virtualenv.
+5. Upon completion, the resulting Bounding Box polygons and Centroid points are automatically added and styled on the QGIS map canvas, accompanied by a reproducible `run_manifest.json`!
 
 ---
 
-## **AI Models & Weights**
+## **Cryptographic Model Weight Integrity & Verification**
 
-Due to their large binary file sizes (e.g., DeepLabV3+ is ~504 MB), trained model weights are hosted on GitHub Releases to keep the git repository lightweight and fast to clone:  
+Trained model weights are hosted on GitHub Releases under tag `models-v1`:  
 👉 **[Official PalmAI Model Releases (tag: models-v1)](https://github.com/Anovvy/PalmAI_Plugin/releases/tag/models-v1)**
 
-### **Option 1: Automatic Download (Recommended)**
-You do **not** need to manually download any model files if your machine has an active internet connection:
-- When you execute any PalmAI tool in QGIS for the first time, the plugin automatically checks the `models/` directory.
-- If the required weight file is not present locally, PalmAI downloads it on-demand in the background directly from GitHub Releases, displaying download progress in QGIS.
-- Once downloaded, the weights are permanently cached in your plugin's `models/` folder for subsequent runs.
+### **Security & Cryptographic Checksum Registry**
+To safeguard users against corrupted downloads, partial writes, or tampered binary assets, PalmAI cryptographically verifies both cached and newly downloaded weights against authoritative SHA-256 digests:
 
-### **Option 2: Manual / Offline Setup**
-If your GIS machine is offline, behind a restrictive proxy/firewall, or you prefer to pre-download weights:
+| Model Filename | Task / Model | Size | Official SHA-256 Checksum | Direct Download |
+|---|---|---|---|:---:|
+| `yolov8n_counting_1.0.pt` | Tree Counting (YOLOv8) | ~6.3 MB | `2c5a4bec86354e808cbd3324fe36656c1a3e1be342ddc1797087e9c48592cfd8` | [Download](https://github.com/Anovvy/PalmAI_Plugin/releases/download/models-v1/yolov8n_counting_1.0.pt) |
+| `yolov8n_centertree_1.3.pt` | Palm Oil Centre Tree (YOLOv8) | ~6.4 MB | `6ed11bab0e8fd3b61a7ab5d751b76d6096d958ce02d0870919667b4048ceef35` | [Download](https://github.com/Anovvy/PalmAI_Plugin/releases/download/models-v1/yolov8n_centertree_1.3.pt) |
+| `yolov8n_classification_2.1.pt` | Condition Classification (YOLOv8) | ~6.3 MB | `05162683b0842e759d17e3448331ece0b5c12678c8d3c66f5d296e1d9b02f795` | [Download](https://github.com/Anovvy/PalmAI_Plugin/releases/download/models-v1/yolov8n_classification_2.1.pt) |
+| `deeplabv3+_roaddetection_1.pth.tar` | Road Network Detection (DeepLabV3+) | ~504 MB | `6f8ec47d0d5be7573f128bb6f1ec53b6dd185fd90bcec2975c5efc451cea9ee0` | [Download](https://github.com/Anovvy/PalmAI_Plugin/releases/download/models-v1/deeplabv3%2B_roaddetection_1.pth.tar) |
 
-1. Download the required model files from the release assets:
-
-| Model Filename | PalmAI Tool / Task | Architecture | Size | Direct Download |
-|---|---|---|---|---|
-| `yolov8n_counting_1.0.pt` | Palm Oil Tree Counting | YOLOv8 Nano | ~6.3 MB | [Download](https://github.com/Anovvy/PalmAI_Plugin/releases/download/models-v1/yolov8n_counting_1.0.pt) |
-| `yolov8n_centertree_1.3.pt` | Palm Oil Centre Tree | YOLOv8 Nano | ~6.4 MB | [Download](https://github.com/Anovvy/PalmAI_Plugin/releases/download/models-v1/yolov8n_centertree_1.3.pt) |
-| `yolov8n_classification_2.1.pt` | Condition Classification | YOLOv8 Nano | ~6.3 MB | [Download](https://github.com/Anovvy/PalmAI_Plugin/releases/download/models-v1/yolov8n_classification_2.1.pt) |
-| `deeplabv3+_roaddetection_1.pth.tar` | Road Network Detection | DeepLabV3+ | ~504 MB | [Download](https://github.com/Anovvy/PalmAI_Plugin/releases/download/models-v1/deeplabv3%2B_roaddetection_1.pth.tar) |
-
-2. Place the downloaded `.pt` and `.pth.tar` files directly into the `models/` folder of your installed PalmAI plugin:
-   - **Windows:**  
-     `%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\PalmAI\models\`  
-     *(Full path: `C:\Users\<Your-Username>\AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins\PalmAI\models\`)*
-   - **macOS:**  
-     `~/Library/Application Support/QGIS/QGIS3/profiles/default/python/plugins/PalmAI/models/`
-   - **Linux:**  
-     `~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/PalmAI/models/`
-
-> **NOTE**
-> Make sure the downloaded files maintain their exact filenames as shown above so the plugin can recognize them.
+### **Automatic Download & Integrity Handling**
+- **First Run Verification:** If missing, PalmAI downloads weights to a `.part` temporary file with bounded retries and exponential backoff.
+- **Atomic Promotion:** The model is only renamed to its final `.pt` or `.pth.tar` path after successfully passing the SHA-256 verification.
+- **Fail Closed:** If a cached or downloaded weight file does not match the checksum, PalmAI removes the corrupt file, raises a descriptive error, and prevents unverified binary execution.
 
 ---
 
-## **Building Docker Images Locally (Optional)**
-If you wish to build the container images locally instead of pulling from GHCR:
+## **Execution Provenance: `run_manifest.json`**
+
+Every executed PalmAI job automatically outputs a structured `run_manifest.json` in the output folder documenting:
+- Plugin version, protocol version, and container image digest.
+- Runtime environment details (Python, PyTorch, GDAL, Rasterio, Shapely versions).
+- Input raster metadata (CRS, resolution/GSD, bounding box dimensions).
+- Processing parameters and total feature counts.
+- SHA-256 digests of all generated output Shapefile components (`.shp`, `.shx`, `.dbf`).
+- **Privacy Protection:** Paths are automatically sanitized to prevent leaking host usernames or local filesystem structures.
+
+---
+
+## **Developer & Contributor Guide**
+
+### Setting Up Development Environment
 ```bash
-cd plugin_qgis
+git clone https://github.com/Anovvy/PalmAI_Plugin.git
+cd PalmAI_Plugin
 
-# CPU image
-docker build -f docker/Dockerfile.cpu -t ghcr.io/anovvy/palmai-core:cpu .
-
-# NVIDIA GPU (CUDA) image
-docker build -f docker/Dockerfile.gpu -t ghcr.io/anovvy/palmai-core:gpu .
+# Create virtual environment and install dev dependencies
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r requirements-dev.txt
 ```
+
+### Running Test Suite
+PalmAI contains 34 automated unit, integration, and synthetic geospatial tests that run in seconds without requiring real weights or GPU hardware:
+```bash
+python -m pytest -v tests/
+```
+
+### Running Code Quality Checks
+```bash
+ruff check plugin_qgis/backends/ plugin_qgis/palmai_core/ scripts/ tests/
+```
+
+### Packaging QGIS Plugin ZIP
+To build an installable ZIP archive excluding heavy model weights and development caches:
+```bash
+python scripts/package_plugin.py --dist-dir dist
+```
+This produces `dist/PalmAI.zip` (root directory `PalmAI/`, <1 MB) and outputs its SHA-256 checksum.
+
+For in-depth architectural details, see:
+- [CI/CD Architecture (`docs/ci-cd.md`)](docs/ci-cd.md)
+- [Release Policy & Compatibility Matrix (`docs/release-policy.md`)](docs/release-policy.md)
+- [Test Matrix (`docs/test-matrix.md`)](docs/test-matrix.md)
 
 ---
 

@@ -4,7 +4,7 @@
 import importlib.util
 
 from ..palmai_core.runner import run_job
-from .base import InferenceBackend, BackendUnavailable
+from .base import BackendUnavailable, InferenceBackend
 
 REQUIRED_MODULES = ("torch", "ultralytics", "sahi", "rasterio", "geopandas", "fiona", "shapely", "skimage")
 

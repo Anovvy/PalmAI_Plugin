@@ -1,47 +1,25 @@
 # This file contains metadata for your plugin.
-
-# This file should be included when you package your plugin.# Mandatory items:
+# This file should be included when you package your plugin.
 
 [general]
 name=PalmAI
-qgisMinimumVersion=3.0
+qgisMinimumVersion=3.22
 qgisMaximumVersion=3.99
 description=Mapping automation plugin for Palm Oil Industry
-version=1.0
+version=2.0.0
 author=Bayu Nabiil
 email=bayunabiil1365@gmail.com
 
-about=This plugin has 4 tools, namely Palm Oil Tree Counting, Palm Oil Tree Classification, Palm Oil Centre Tree, and road detection. Palm Oil Tree Counting is used for tree counting of oil palm trees, Palm Oil Tree Classification is used to classify oil palm trees based on their appearance from aerial photographs. Palm Oil Center Tree is used for precision mapping, namely the placement of points in the middle of the crown of oil palm trees, and Road detection is used to extract roads from aerial photographs of oil palm plantation areas and convert them into vector files. The output of this plugin is in the form of bounding boxes, points, and line in shapefile(.shp) format.
+about=PalmAI provides automated deep learning feature extraction for oil palm plantations directly inside QGIS. It includes 4 tools: Palm Oil Tree Counting (YOLOv8), Palm Oil Centre Tree (YOLOv8 apical crown localization), Palm Oil Tree Classification (YOLOv8 condition assessment), and Road Network Detection (DeepLabV3+ semantic segmentation and topological vectorization). Outputs include polygons, points, and polyline Shapefiles with full spatial metadata.
 
-tracker=http://bugs
-repository=http://repo
-# End of mandatory metadata
-
-# Recommended items:
+tracker=https://github.com/Anovvy/PalmAI_Plugin/issues
+repository=https://github.com/Anovvy/PalmAI_Plugin
+homepage=https://github.com/Anovvy/PalmAI_Plugin
 
 hasProcessingProvider=no
-# Uncomment the following line and add your changelog:
-# changelog=
-
-# Tags are comma separated with spaces allowed
-tags=python
-
-homepage=http://homepage
-category=Plugins
+tags=oil palm, agriculture, deep learning, yolo, segmentation, remote sensing, ai
+category=Raster
 icon=icon.png
-# experimental flag
 experimental=False
-
-# deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
-
-# Since QGIS 3.8, a comma separated list of plugins to be installed
-# (or upgraded) can be specified.
-# Check the documentation for more information.
-# plugin_dependencies=
-
-Category of the plugin: Raster, Vector, Database or Web
-# category=
-
-# If the plugin can run on QGIS Server.
 server=False

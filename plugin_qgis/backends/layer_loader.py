@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Helpers that load job results into QGIS (main thread only)."""
 
-from qgis.core import Qgis, QgsMessageLog, QgsFillSymbol, QgsMarkerSymbol, QgsLineSymbol
+from qgis.core import Qgis, QgsFillSymbol, QgsLineSymbol, QgsMarkerSymbol, QgsMessageLog
 
 CLASS_COLORS = {"Healthy": "#39FF14", "Yellowish": "#FFFF00", "Dead": "#000000"}
 

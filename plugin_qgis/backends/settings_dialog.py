@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 """Backend settings dialog (built in code, no .ui file)."""
 
-from qgis.PyQt.QtWidgets import (QDialog, QVBoxLayout, QLabel, QComboBox, QPushButton,
-                                 QHBoxLayout, QPlainTextEdit)
-from qgis.core import QgsApplication, QgsTask, QgsMessageLog, Qgis
+from qgis.core import Qgis, QgsApplication, QgsMessageLog, QgsTask
+from qgis.PyQt.QtWidgets import QComboBox, QDialog, QHBoxLayout, QLabel, QPlainTextEdit, QPushButton, QVBoxLayout
 
-from ..palmai_core.context import JobContext, JobCanceled
-from . import (BACKEND_CHOICES, PLUGIN_DIR, default_env_dir, get_choice, set_choice)
-from .docker_backend import DockerBackend
-from .venv_backend import VenvBackend
-from .local_backend import LocalBackend
+from ..palmai_core.context import JobCanceled, JobContext
+from . import BACKEND_CHOICES, PLUGIN_DIR, default_env_dir, get_choice, set_choice
 from .base import BackendError
+from .docker_backend import DockerBackend
+from .local_backend import LocalBackend
+from .venv_backend import VenvBackend
 
 
 class _VenvSetupTask(QgsTask):

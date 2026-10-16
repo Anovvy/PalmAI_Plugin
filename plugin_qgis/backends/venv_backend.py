@@ -8,8 +8,8 @@ import subprocess
 import sys
 import tempfile
 
-from .base import InferenceBackend, BackendError, BackendUnavailable
-from .process_runner import run_worker, run_command_streaming, _popen_flags
+from .base import BackendError, BackendUnavailable, InferenceBackend
+from .process_runner import _popen_flags, run_command_streaming, run_worker
 
 TORCH_PINS = ["torch==2.5.1", "torchvision==0.20.1"]
 SUPPORTED = ((3, 9), (3, 12))  # inclusive range of base interpreter versions
@@ -109,7 +109,7 @@ class VenvBackend(InferenceBackend):
         if not (os.path.exists(self.python_exe) and os.path.exists(marker)):
             return False
         try:
-            with open(marker, "r", encoding="utf-8") as f:
+            with open(marker, encoding="utf-8") as f:
                 return f.read() == self._lock_signature()
         except Exception:
             return False

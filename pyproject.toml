@@ -1,0 +1,50 @@
+[project]
+name = "palmai"
+version = "2.0.0"
+description = "AI-powered QGIS plugin for oil palm feature extraction"
+readme = "README.md"
+requires-python = ">=3.9"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+pythonpath = [".", "plugin_qgis"]
+addopts = "-ra -q --strict-markers"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore::UserWarning",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "demo_data",
+    "notebooks",
+    "plugin_qgis/models",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by formatter or relaxed for legacy UI strings)
+    "E402",  # module level import not at top (needed for conditional / lazy imports)
+    "UP007", # Use X | Y for type annotations (keep py39 compatibility)
+    "UP009", # UTF-8 encoding declaration (standard in QGIS Python plugins)
+    "E741",  # ambiguous variable name (common in layer/log lambdas)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["palmai_core", "backends"]

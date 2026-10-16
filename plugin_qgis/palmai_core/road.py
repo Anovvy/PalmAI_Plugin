@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """DeepLabV3+ road segmentation + skeleton/vectorisation (ported from RoadInferenceTask)."""
 
-import os
 import gc
+import os
 
 from .context import JobContext
 from .device import resolve_device
@@ -109,7 +109,29 @@ class RoadPipeline:
             self.prediction_prob_map = self._inference_tiling(model)
             self.ctx.check_cancel()
             self._post_process_and_vectorize(aoi_gdf, aoi_polygon)
-            return {"layers": self.output_layers}
+
+            manifest_path = None
+            try:
+                from .provenance import build_run_manifest, write_run_manifest
+                target_out = self.p.get("output_vector_path") or self.p.get("output_raster_path")
+                if target_out:
+                    out_dir = os.path.dirname(os.path.abspath(target_out))
+                    input_meta = {
+                        "crs": str(source_crs),
+                        "width": self.p.get("meta", {}).get("width"),
+                        "height": self.p.get("meta", {}).get("height"),
+                    }
+                    manifest = build_run_manifest(
+                        "road", self.p, {"layers": self.output_layers}, input_meta=input_meta
+                    )
+                    manifest_path = write_run_manifest(out_dir, manifest)
+            except Exception as e:
+                self.ctx.log(f"Notice: could not emit run_manifest: {e}", "info")
+
+            res_payload = {"layers": self.output_layers}
+            if manifest_path:
+                res_payload["manifest_path"] = manifest_path
+            return res_payload
         finally:
             self.prediction_prob_map = None
             gc.collect()
@@ -122,9 +144,9 @@ class RoadPipeline:
                         pass
 
     def _inference_tiling(self, model):
-        import torch
         import numpy as np
         import rasterio
+        import torch
         from rasterio.windows import Window
         p = self.p
         with rasterio.open(p["raster_path"]) as src:
@@ -169,11 +191,11 @@ class RoadPipeline:
             return pred_mmap
 
     def _post_process_and_vectorize(self, aoi_gdf, aoi_polygon):
+        import geopandas as gpd
         import numpy as np
         import rasterio
-        import geopandas as gpd
-        from shapely.geometry import LineString
         from scipy.ndimage import convolve
+        from shapely.geometry import LineString
         try:
             import cv2
             HAS_CV2 = True
