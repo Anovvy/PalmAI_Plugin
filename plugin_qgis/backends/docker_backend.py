@@ -294,23 +294,7 @@ class DockerBackend(InferenceBackend):
         raise BackendError(f"Could not pull or build the Docker image '{primary_image}'.")
 
     # --- job execution ------------------------------------------------------
-    def run(self, job, params, ctx):
-        problem = self.diagnose()
-        if problem:
-            raise BackendUnavailable(problem)
-
-        want_gpu = params.get("device", "cpu") != "cpu"
-        use_gpu = want_gpu and self.has_nvidia_runtime()
-        if want_gpu and not use_gpu:
-            ctx.log("GPU requested, but Docker has no NVIDIA runtime. Running container on CPU.", "warning")
-            params = dict(params, device="cpu")
-
-        image = self.ensure_image(use_gpu, ctx)
-        digest = self.get_image_digest(image)
-        if digest:
-            ctx.log(f"Execution runtime image digest: {digest}", "info")
-
-        models_dir = os.path.abspath(os.path.join(self.plugin_dir, "models"))
+    def _execute_container(self, job, params, use_gpu, image, models_dir, ctx):
         mapper = PathMapper()
         cparams = mapper.translate_params(params)
         for key in ("weight_path", "model_path"):
@@ -339,7 +323,7 @@ class DockerBackend(InferenceBackend):
                 "python", "-m", "palmai_core.worker", "/job/job.json",
             ]
 
-            ctx.describe("Starting container...")
+            ctx.describe(f"Starting {'GPU' if use_gpu else 'CPU'} container...")
 
             def kill_container():
                 try:
@@ -350,3 +334,54 @@ class DockerBackend(InferenceBackend):
             return run_worker(cmd, ctx, map_result=mapper.translate_result, on_cancel=kill_container)
         finally:
             shutil.rmtree(job_dir, ignore_errors=True)
+
+    def run(self, job, params, ctx):
+        problem = self.diagnose()
+        if problem:
+            raise BackendUnavailable(problem)
+
+        want_gpu = params.get("device", "cpu") != "cpu"
+        use_gpu = want_gpu and self.has_nvidia_runtime()
+        if want_gpu and not use_gpu:
+            ctx.log("GPU requested, but Docker has no NVIDIA runtime. Running container on CPU.", "warning")
+            params = dict(params, device="cpu")
+
+        image = self.ensure_image(use_gpu, ctx)
+        digest = self.get_image_digest(image)
+        if digest:
+            ctx.log(f"Execution runtime image digest: {digest}", "info")
+
+        models_dir = os.path.abspath(os.path.join(self.plugin_dir, "models"))
+
+        if use_gpu:
+            try:
+                return self._execute_container(job, params, True, image, models_dir, ctx)
+            except BackendError as err:
+                err_str = str(err).lower()
+                is_gpu_runtime_error = any(sig in err_str for sig in (
+                    "no adapters were found",
+                    "wsl environment detected",
+                    "nvidia-container-cli",
+                    "could not select device driver",
+                    "unknown or invalid runtime name",
+                    "code 125",
+                ))
+                if not is_gpu_runtime_error:
+                    raise
+
+                ctx.log(
+                    "GPU container execution failed: Incompatible CUDA driver or missing WSL 2 GPU adapter.\n"
+                    "Error details: nvidia-container-cli initialization error (WSL environment detected but no adapters were found).\n"
+                    "Notice: Your host NVIDIA display driver or CUDA version is incompatible with the GPU container runtime. "
+                    "A modern NVIDIA display driver (version >= 528.xx supporting CUDA 12+) is required for WSL 2 GPU acceleration.\n"
+                    "Automatically falling back to CPU execution so your analysis can proceed...",
+                    "warning",
+                )
+                cpu_params = dict(params, device="cpu")
+                cpu_image = self.ensure_image(gpu=False, ctx=ctx)
+                cpu_digest = self.get_image_digest(cpu_image)
+                if cpu_digest:
+                    ctx.log(f"Fallback CPU image digest: {cpu_digest}", "info")
+                return self._execute_container(job, cpu_params, False, cpu_image, models_dir, ctx)
+
+        return self._execute_container(job, params, False, image, models_dir, ctx)

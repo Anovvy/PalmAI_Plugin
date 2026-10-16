@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import MagicMock, patch
 
+from plugin_qgis.backends.base import BackendError
 from plugin_qgis.backends.docker_backend import DockerBackend
 
 
@@ -113,6 +114,54 @@ class TestDockerBackend(unittest.TestCase):
             self.assertTrue(any("/job:ro" in arg for arg in cmd_executed))
             # Verify no --gpus flag due to CPU fallback
             self.assertNotIn("--gpus", cmd_executed)
+
+    @patch.object(DockerBackend, "diagnose", return_value=None)
+    @patch.object(DockerBackend, "ensure_image")
+    @patch.object(DockerBackend, "has_nvidia_runtime", return_value=True)
+    @patch("plugin_qgis.backends.docker_backend.run_worker")
+    def test_run_runtime_gpu_error_falls_back_to_cpu(self, mock_run_worker, mock_gpu, mock_ensure, mock_diag):
+        self.backend.docker = "/usr/bin/docker"
+        ctx = MagicMock()
+        mock_ensure.side_effect = ["palmai-core:v2.0.0-gpu", "palmai-core:v2.0.0-cpu"]
+
+        # First call fails with code 125 (WSL no adapters found), second call (CPU fallback) succeeds
+        gpu_error = BackendError(
+            "The worker exited without a result (code 125).\n"
+            "nvidia-container-cli: initialization error: WSL environment detected but no adapters were found"
+        )
+        mock_run_worker.side_effect = [gpu_error, {"layers": [], "total_detections": 15}]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            raster = os.path.join(tmpdir, "in.tif")
+            bbox = os.path.join(tmpdir, "out.shp")
+            with open(raster, "w") as f:
+                f.write("dummy")
+
+            params = {
+                "raster_path": raster,
+                "bbox_output_path": bbox,
+                "centroid_output_path": bbox,
+                "weight_path": "model.pt",
+                "device": "cuda",
+            }
+
+            result = self.backend.run("counting", params, ctx)
+            self.assertEqual(result["total_detections"], 15)
+            self.assertEqual(mock_run_worker.call_count, 2)
+
+            # First attempt included --gpus all
+            first_cmd = mock_run_worker.call_args_list[0][0][0]
+            self.assertIn("--gpus", first_cmd)
+
+            # Fallback attempt did not include --gpus
+            second_cmd = mock_run_worker.call_args_list[1][0][0]
+            self.assertNotIn("--gpus", second_cmd)
+
+            # Warning log emitted about CUDA driver incompatibility
+            ctx.log.assert_any_call(
+                unittest.mock.ANY,
+                "warning",
+            )
 
 
 if __name__ == "__main__":
