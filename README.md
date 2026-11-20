@@ -23,22 +23,22 @@ To eliminate dependency conflicts ("dependency hell") across different operating
 ### 1. Tree Counting (YOLOv8)
 Automated detection and enumeration of oil palm trees with Shapefile outputs (Bounding Boxes & Centroid Points).
 
-https://github.com/user-attachments/assets/98feab8e-b895-4ee3-b47f-22ab097fc2bc
+<img src="docs/assets/tree_counting_demo.webp" width="640" alt="PalmAI Tree Counting Demo" />
 
 ### 2. Center Tree (YOLOv8)
 High-precision crown centroid extraction for precision agriculture navigation and targeted interventions (e.g., spraying *Oryctes rhinoceros* pests).
 
-https://github.com/user-attachments/assets/34584588-0f9d-404b-8fed-267057f0ef7f
+<img src="docs/assets/center_tree_demo.webp" width="640" alt="PalmAI Center Tree Demo" />
 
 ### 3. Tree Classification (YOLOv8)
 Multi-class condition assessment categorizing trees into three health statuses (**Healthy**, **Yellowish**, and **Dead**) with distinct symbology.
 
-https://github.com/user-attachments/assets/1938980e-e6e4-4759-9d31-44d6a70f6ded
+<img src="docs/assets/tree_classification_demo.webp" width="640" alt="PalmAI Tree Classification Demo" />
 
 ### 4. Road Detection (DeepLabV3+)
 Canopy-resistant semantic segmentation and topological vectorization that extracts plantation road networks into polyline Shapefiles using morphological skeletonization and A* pathfinding.
 
-https://github.com/user-attachments/assets/643d65d7-d6e7-4b14-a943-de487a838b0d
+<img src="docs/assets/road_detection_demo.webp" width="640" alt="PalmAI Road Detection Demo" />
 
 ---
 
